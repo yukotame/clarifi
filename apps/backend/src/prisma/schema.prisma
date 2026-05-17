@@ -1,0 +1,52 @@
+// ClariFi DBスキーマ
+// PostgreSQL使用
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 取引データ
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  date        DateTime                    // 取引年月日
+  store       String                      // 利用店舗
+  amount      Int                         // 利用金額（税込）
+  usageType   String                      // 利用区分
+  chargeType  String?                     // チャージ区分（nullable）
+  category    String   @default("その他") // カテゴリ
+  source      String                      // "WAON" or "PAYPAY"
+  isExcluded  Boolean  @default(false)    // チャージ・返金除外フラグ
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("transactions")
+}
+
+// カテゴリ自動分類ルール
+// 店舗名キーワードとカテゴリのマッピング
+model CategoryRule {
+  id        Int      @id @default(autoincrement())
+  keyword   String   @unique               // 例："イオン"
+  category  String                         // 例："食費"
+  createdAt DateTime @default(now())
+
+  @@map("category_rules")
+}
+
+// スクレイピング実行履歴
+model ScraperLog {
+  id        Int      @id @default(autoincrement())
+  source    String                          // "WAON"
+  status    String                          // "success" or "error"
+  message   String?
+  count     Int      @default(0)           // 取得件数
+  csvPath   String?                         // 出力CSVパス
+  createdAt DateTime @default(now())
+
+  @@map("scraper_logs")
+}
