@@ -1,4 +1,4 @@
-// ClariFi DBスキーマ
+// ClariFi DB スキーマ
 // PostgreSQL使用
 
 generator client {
@@ -10,19 +10,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 取引データ
+// 取引データ（WAONとPayPay統一フォーマット）
+// カラムマッピング:
+//   date          ← WAON: 取引年月日       / PayPay: 利用日/キャンセル日
+//   store         ← WAON: 利用店舗         / PayPay: 利用店名・商品名
+//   amount        ← WAON: 利用金額（税込） / PayPay: 支払総額
+//   usageType     ← WAON: 利用区分         / PayPay: 支払区分
+//   chargeType    ← WAON: チャージ区分     / PayPay: null
+//   paymentMethod ← WAON: null             / PayPay: 決済方法
 model Transaction {
-  id          Int      @id @default(autoincrement())
-  date        DateTime                    // 取引年月日
-  store       String                      // 利用店舗
-  amount      Int                         // 利用金額（税込）
-  usageType   String                      // 利用区分
-  chargeType  String?                     // チャージ区分（nullable）
-  category    String   @default("その他") // カテゴリ
-  source      String                      // "WAON" or "PAYPAY"
-  isExcluded  Boolean  @default(false)    // チャージ・返金除外フラグ
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  date          DateTime                    // 取引年月日 / 利用日
+  store         String                      // 利用店舗 / 利用店名・商品名
+  amount        Int                         // 利用金額（税込）/ 支払総額
+  usageType     String                      // 利用区分 / 支払区分
+  chargeType    String?                     // チャージ区分（WAON only, nullable）
+  paymentMethod String?                     // 決済方法（PayPay only, nullable）
+  category      String   @default("その他") // カテゴリ（自動分類）
+  source        String                      // "WAON" or "PAYPAY"
+  isExcluded    Boolean  @default(false)    // チャージ・返金・キャンセル除外フラグ
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@map("transactions")
 }
